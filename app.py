@@ -1,20 +1,14 @@
- from flask import Flask, render_template, request
+from flask import Flask, render_template, request
 from tweepy import OAuthHandler
 from tweepy import API
 from tweepy import Cursor
-from datetime import datetime, date, time, timedelta
 from collections import Counter
+import time
 import tweepy as tw
 import sys
 import os
+import random
 
-app = Flask(__name__)
-@app.route('/', methods = ['GET', 'POST'])
-def sign_in():
-    return render_template('index.html')
-
-if __name__ == "__main__":
-    app.run("0.0.0.0","8080", debug = True)
 
 consumer_key=os.environ['oauth_consumer_key']
 consumer_secret=os.environ['oauth_consumer_secret']
@@ -23,13 +17,36 @@ access_token_secret=os.environ['oauth_token_secret']
 
 auth = OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
-auth_api = API(auth)
+auth_api = API(auth, wait_on_rate_limit=True)
 
-userID = sys.argv[1]
+# A function that generates tweets
 
-end_date = datetime.utcnow() - timedelta(days=30)
-for tweet in Cursor(auth_api.user_timeline, id=userID).items():
-  print(tweet.text + "\n")
-  if tweet.created_at < end_date:
-    break
+def TweetList(authentication, hashtag):
+    tweets = []
+    for tweet in Cursor(auth_api.search,q=hashtag,count=20, 
+    lang='en',since='2018-09-19').items():
+      tweets.append(tweet.text)
+    return tweets
+
+
+foodList = ["rolledicecream","chocolateicecream","strawberryicecream"]
+randFood = random.choice(foodList)
+hashtag = "#" + randFood
+tweet_list = TweetList(auth_api, hashtag)
+random_tweet = random.choice(tweet_list)
+
+# declaring home page
+app = Flask(__name__)
+@app.route('/', methods = ['GET', 'POST'])
+
+# defining home page
+def homepage():
+  # returning index.html and list
+  # and length of list to html page
+  return render_template("index.html", random_tweet=random_tweet)
+
+if __name__ == "__main__":
+    app.run("0.0.0.0","8080", debug = True)
+
+
 
